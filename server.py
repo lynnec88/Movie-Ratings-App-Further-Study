@@ -1,8 +1,8 @@
 """Server for movie ratings app."""
 
-from flask import (Flask, render_template, request, flash, session, redirect)
-from model import connect_to_db, db
-import crud
+from flask import Flask, render_template, request, flash, session, redirect
+from model import connect_to_db, db, User, Movie, Rating
+
 from jinja2 import StrictUndefined
 
 app = Flask(__name__)
@@ -16,17 +16,17 @@ def homepage():
 
 @app.route("/movies")
 def all_movies():
-    movies = crud.get_movies()
+    movies = Movie.all_movies()
     return render_template("all_movies.html", movies=movies)
 
 @app.route("/movies/<movie_id>")
 def show_movie(movie_id):
-    movie = crud.get_movie_by_id(movie_id)
+    movie = Movie.get_by_id(movie_id)
     return render_template("movie_details.html", movie=movie)
     
 @app.route("/users")
 def all_users():
-    users = crud.get_users()
+    users = User.all_users()
     return render_template("all_users.html", users=users)
 
 @app.route("/users", methods=["POST"])
@@ -35,11 +35,11 @@ def register_user():
     email = request.form.get("email")
     password = request.form.get("password")
 
-    user = crud.get_user_by_email(email)
+    user = User.get_by_email(email)
     if user:
         flash("Cannot create an account with that email. Try again.")
     else:
-        user = crud.create_user(email, password)
+        user = User.create(email, password)
         db.session.add(user)
         db.session.commit()
         flash("Account created! Please log in.")
@@ -47,7 +47,7 @@ def register_user():
 
 @app.route("/users/<user_id>")
 def show_user(user_id):
-    user = crud.get_user_by_id(user_id)
+    user = User.get_by_id(user_id)
     return render_template("user_details.html", user=user)
 
 @app.route("/login", methods=["POST"])
@@ -56,7 +56,7 @@ def process_login():
     email = request.form.get("email")
     password = request.form.get("password")
 
-    user = crud.get_user_by_email(email)
+    user = User.get_by_email(email)
     if not user or user.password != password:
         flash("The email or password you entered was incorrect.")
     else:
@@ -68,7 +68,7 @@ def process_login():
 def update_rating():
     rating_id = request.json["rating_id"]
     updated_score = request.json["updated_score"]
-    crud.update_rating(rating_id, updated_score)
+    Rating.update(rating_id, updated_score)
     db.session.commit()
     return "Success"
 
@@ -84,10 +84,10 @@ def create_rating(movie_id):
     elif not rating_score:
         flash("Error: you didn't select a score for your rating.")
     else:
-        user = crud.get_user_by_email(logged_in_email)
-        movie = crud.get_movie_by_id(movie_id)
+        user = User.get_by_email(logged_in_email)
+        movie = Movie.get_by_id(movie_id)
 
-        rating = crud.create_rating(user, movie, int(rating_score))
+        rating = Rating.create(user, movie, int(rating_score))
         db.session.add(rating)
         db.session.commit()
 

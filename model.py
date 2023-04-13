@@ -10,6 +10,7 @@ class User(db.Model):
     """A user."""
 
     __tablename__ = "users"
+    
 
     user_id = db.Column(db.Integer,
                         autoincrement=True,
@@ -20,6 +21,24 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User user_id={self.user_id} email={self.email}>'
+
+    @classmethod
+    def create(cls, email, password):
+        return cls(email=email, password=password)
+
+    @classmethod
+    def get_by_id(cls, email):
+        return cls.query.filter(User.email == email).first()
+    
+    @classmethod
+    def get_by_email(cls, email):
+        return cls.query.filter(User.email == email).first()
+
+    @classmethod
+    def all_users(cls):
+        return cls.query.all()
+
+    
     
 class Movie(db.Model):
     """A movie."""
@@ -38,6 +57,23 @@ class Movie(db.Model):
     def __repr__(self):
         return f'<Movie movie_id={self.movie_id} title={self.title}>'
     
+    @classmethod
+    def create(cls, title, overview, release_date, poster_path):
+        return cls(
+            title=title,
+            overview=overview,
+            release_date=release_date,
+            poster_path=poster_path,
+        )
+
+    @classmethod
+    def all_movies(cls):
+        return cls.query.all()
+
+    @classmethod
+    def get_by_id(cls, movie_id):
+        return cls.query.get(movie_id)
+    
 class Rating(db.Model):
     """A rating."""
 
@@ -55,6 +91,16 @@ class Rating(db.Model):
 
     def __repr__(self):
         return f'<Rating rating_id={self.rating_id} score={self.score}>'
+    
+    @classmethod
+    def create(cls, user, movie, score):
+        return cls(user=user, movie=movie, score=score)
+    
+    @classmethod
+    def update(cls, rating_id, new_score):
+        rating = cls.query.get(rating_id)
+        rating.score = new_score
+
 
 def connect_to_db(flask_app, db_uri="postgresql:///ratings", echo=True):
     flask_app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
